@@ -46,7 +46,10 @@ func Run(opt Option) error {
 		results[i] = *res
 	}
 
-	table := NewTableConverter(def.Fields, opt.EnableColor).Convert(results)
+	table := NewTableConverter(def.Fields).Convert(results)
+	if opt.EnableColor {
+		table.Color()
+	}
 	table.Render(os.Stdout)
 
 	return nil

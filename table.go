@@ -10,56 +10,24 @@ import (
 
 type TableConverter struct {
 	Fields []string
-	Color  bool
 }
 
-func NewTableConverter(fields []string, color bool) *TableConverter {
+func NewTableConverter(fields []string) *TableConverter {
 	return &TableConverter{
 		Fields: fields,
-		Color:  color,
 	}
 }
 
 func (c *TableConverter) Convert(results []SearcherResult) *Table {
 	t := &Table{
-		Header:  makeHeader(results),
-		Content: makeContent(results, c.Fields),
-		Colors:  [][]tablewriter.Colors{},
-		Footer:  makeFooter(results),
-	}
-	if c.Color {
-		t.Colors = makeColors(results)
+		Header:  c.makeHeader(results),
+		Content: c.makeContent(results),
+		Footer:  c.makeFooter(results),
 	}
 	return t
 }
 
-type Table struct {
-	Header  []string
-	Content [][]string
-	Colors  [][]tablewriter.Colors
-	Footer  []string
-}
-
-func (t *Table) Render(w io.Writer) {
-	writer := tablewriter.NewWriter(w)
-	writer.SetRowLine(true)
-	writer.SetHeader(t.Header)
-	writer.SetFooter(t.Footer)
-	writer.SetReflowDuringAutoWrap(false)
-
-	if len(t.Content) == len(t.Colors) {
-		for i := range t.Content {
-			writer.Rich(t.Content[i], t.Colors[i])
-		}
-	} else {
-		for i := range t.Content {
-			writer.Append(t.Content[i])
-		}
-	}
-	writer.Render()
-}
-
-func makeHeader(results []SearcherResult) []string {
+func (c *TableConverter) makeHeader(results []SearcherResult) []string {
 	header := make([]string, len(results)+1)
 	header[0] = "" // header column
 	for i, res := range results {
@@ -68,7 +36,7 @@ func makeHeader(results []SearcherResult) []string {
 	return header
 }
 
-func makeContent(results []SearcherResult, fields []string) [][]string {
+func (c *TableConverter) makeContent(results []SearcherResult) [][]string {
 	m, n := maxHitLen(results), len(results)
 	content := make([][]string, m)
 	for i := 0; i < m; i++ {
@@ -76,58 +44,32 @@ func makeContent(results []SearcherResult, fields []string) [][]string {
 		content[i][0] = fmt.Sprintf("#%d", i+1) // header column
 		for j, res := range results {
 			if h := res.Hits; len(h) > i {
-				content[i][j+1] = makeContentString(h[i], fields)
+				content[i][j+1] = c.makeContentString(h[i])
 			}
 		}
 	}
 	return content
 }
 
-func makeContentString(doc ESDoc, fields []string) string {
+func maxHitLen(results []SearcherResult) int {
+	var max int
+	for _, res := range results {
+		if l := len(res.Hits); l > max {
+			max = l
+		}
+	}
+	return max
+}
+
+func (c *TableConverter) makeContentString(doc ESDoc) string {
 	var strs []string
-	for _, f := range fields {
+	for _, f := range c.Fields {
 		strs = append(strs, fmt.Sprintf("%v", doc.Source[f]))
 	}
 	return strings.Join(strs, " / ")
 }
 
-func makeColors(results []SearcherResult) [][]tablewriter.Colors {
-	// scan search results and mark matching docs
-	scanned := make(map[string]bool)
-	colorMap, colorID := make(map[string]int), 0
-	for _, res := range results {
-		for _, doc := range res.Hits {
-			if scanned[doc.ID] {
-				if _, ok := colorMap[doc.ID]; !ok {
-					colorMap[doc.ID] = colorID
-					colorID++
-				}
-				continue
-			}
-			scanned[doc.ID] = true
-		}
-	}
-
-	// coloring
-	m, n := maxHitLen(results), len(results)
-	colors := make([][]tablewriter.Colors, m)
-	for i := 0; i < m; i++ {
-		colors[i] = make([]tablewriter.Colors, n+1)
-		colors[i][0] = tablewriter.Color() // header column
-		for j, res := range results {
-			if h := res.Hits; len(h) > i {
-				doc := h[i]
-				if colorID, ok := colorMap[doc.ID]; ok {
-					colors[i][j+1] = getColors(colorID)
-					continue
-				}
-			}
-		}
-	}
-	return colors
-}
-
-func makeFooter(results []SearcherResult) []string {
+func (c *TableConverter) makeFooter(results []SearcherResult) []string {
 	footer := make([]string, len(results)+1)
 	footer[0] = "COUNT" // header column
 	for i, res := range results {
@@ -141,14 +83,48 @@ func makeFooter(results []SearcherResult) []string {
 	return footer
 }
 
-func maxHitLen(results []SearcherResult) int {
-	var max int
-	for _, res := range results {
-		if l := len(res.Hits); l > max {
-			max = l
+type Table struct {
+	Header  []string
+	Content [][]string
+	Footer  []string
+
+	colors [][]tablewriter.Colors
+}
+
+func (t *Table) Color() *Table {
+	// scan table and choose colors
+	scanned := make(map[string]bool)
+	colorMap := make(map[string]int)
+	colorID := 0
+	for _, row := range t.Content {
+		for _, text := range row {
+			if text == "" {
+				continue
+			}
+			if scanned[text] {
+				if _, ok := colorMap[text]; !ok {
+					colorMap[text] = colorID
+					colorID++
+				}
+				continue
+			}
+			scanned[text] = true
 		}
 	}
-	return max
+
+	// set color
+	colors := make([][]tablewriter.Colors, len(t.Content))
+	for i, row := range t.Content {
+		colors[i] = make([]tablewriter.Colors, len(row))
+		for j, text := range row {
+			if colorID, ok := colorMap[text]; ok {
+				colors[i][j] = getColors(colorID)
+			}
+		}
+	}
+	t.colors = colors
+
+	return t
 }
 
 func getColors(n int) tablewriter.Colors {
@@ -157,4 +133,23 @@ func getColors(n int) tablewriter.Colors {
 	m := n + 1 + (n / 8)
 	fg, bg := m%8+30, m/8+40
 	return tablewriter.Color(4, fg, bg)
+}
+
+func (t *Table) Render(w io.Writer) {
+	writer := tablewriter.NewWriter(w)
+	writer.SetRowLine(true)
+	writer.SetHeader(t.Header)
+	writer.SetFooter(t.Footer)
+	writer.SetReflowDuringAutoWrap(false)
+
+	if len(t.Content) == len(t.colors) {
+		for i := range t.Content {
+			writer.Rich(t.Content[i], t.colors[i])
+		}
+	} else {
+		for i := range t.Content {
+			writer.Append(t.Content[i])
+		}
+	}
+	writer.Render()
 }
