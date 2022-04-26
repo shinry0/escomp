@@ -7,8 +7,8 @@ Elasticsearch Result Comparing Tool
 ```toml
 # Definition file sample
 
-params = ["keyword"]
-fields = ["speaker", "text_entry"]
+params = ["who", "speech"]
+fields = ["line_number","speaker", "text_entry"]
 
 [esconfig.default]
 url = "http://localhost:9200"
@@ -22,8 +22,19 @@ index = "shakespeare"
 query = """
 {
   "query": {
-    "match": {
-      "text_entry": "{{keyword}}"
+    "bool": {
+      "should": [
+        {
+          "match": {
+            "speaker": "{{who}}"
+          }
+        },
+        {
+          "match": {
+            "text_entry": "{{speech}}"
+          }
+        }
+      ]
     }
   }
 }
@@ -37,17 +48,20 @@ query = """
 {
   "query": {
     "bool": {
-      "must": [
-        {
-          "match": {
-            "text_entry": "{{keyword}}"
-          }
-        }
-      ],
       "should": [
         {
           "match": {
-            "speaker": "{{keyword}}"
+            "speaker": {
+              "query": "{{who}}"
+            }
+          }
+        },
+        {
+          "match": {
+            "text_entry": {
+              "query": "{{speech}}",
+              "boost": 0.5
+            }
           }
         }
       ]
@@ -58,7 +72,7 @@ query = """
 ```
 
 ```shell
-$ escomp -f def.toml -n 8 --color Juliet
+$ escomp -f files/sample.toml --color -n 5 "Juliet" "Wherefore art thou Romeo"
 ```
 
-![output](https://user-images.githubusercontent.com/60764129/165164730-c0e435d8-fa68-414e-83f7-27d79166d6ef.png)
+![output](https://user-images.githubusercontent.com/60764129/165378810-65358fac-0702-46ff-b692-54e31c30120e.png)
