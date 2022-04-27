@@ -1,6 +1,14 @@
 # escomp
 
-Elasticsearch Result Comparing Tool
+escomp is a CLI tool to compare several search results for Elasticsearch.
+
+## Install
+
+```shell
+$ go install github.com/shinry0/escomp/cmd/escomp@latest
+```
+
+or download a binary from [Releases](https://github.com/shinry0/escomp/releases).
 
 ## Usage
 
