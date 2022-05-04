@@ -9,7 +9,7 @@ import (
 
 type mockESSearcher struct{}
 
-func (m *mockESSearcher) Search(index, query string, size int) (esResult, error) {
+func (m *mockESSearcher) Search(index, query string, source []string, size int) (esResult, error) {
 	q := `{ "query": { "match": { "title": "TITLE" } } }`
 	qn := `{ "query": { "match": { "title": "NO HITS" } } }`
 
@@ -44,6 +44,7 @@ func TestSearch(t *testing.T) {
 		testname   string
 		searchCase SearchCase
 		params     map[string]string
+		source     []string
 		size       int
 		want       SearcherResult
 		wantErr    bool
@@ -56,6 +57,7 @@ func TestSearch(t *testing.T) {
 				Query: `{ "query": { "match": { "title": "{{keyword}}" } } }`,
 			},
 			params: map[string]string{"keyword": "TITLE"},
+			source: []string{"title"},
 			size:   8,
 			want: SearcherResult{
 				Name: "alpha",
@@ -75,6 +77,7 @@ func TestSearch(t *testing.T) {
 				Query: `{ "query": { "match": { "title": "{{keyword}}" } } }`,
 			},
 			params: map[string]string{"keyword": "NO HITS"},
+			source: []string{"title"},
 			size:   8,
 			want: SearcherResult{
 				Name: "beta",
@@ -92,6 +95,7 @@ func TestSearch(t *testing.T) {
 				Query: `{ "query": { "match": { "title": "{{keyword}}" } } }`,
 			},
 			params:  map[string]string{"keyword": "TITLE"},
+			source:  []string{"title"},
 			size:    8,
 			wantErr: true,
 		},
@@ -99,7 +103,7 @@ func TestSearch(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testname, func(t *testing.T) {
 			mock := new(mockESSearcher)
-			got, err := NewSearcher(test.searchCase, mock).Search(test.params, test.size)
+			got, err := NewSearcher(test.searchCase, mock).Search(test.params, test.source, test.size)
 			if test.wantErr {
 				if err == nil {
 					t.Errorf("expected error didn't occur: got %v", got)

@@ -24,7 +24,7 @@ func NewSearcher(sc SearchCase, cli ESSearcher) *Searcher {
 	return &Searcher{sc, cli}
 }
 
-func (s *Searcher) Search(params map[string]string, size int) (*SearcherResult, error) {
+func (s *Searcher) Search(params map[string]string, source []string, size int) (*SearcherResult, error) {
 	res := &SearcherResult{Name: s.Name}
 
 	query, err := emdedParams(s.Query, params)
@@ -32,7 +32,7 @@ func (s *Searcher) Search(params map[string]string, size int) (*SearcherResult, 
 		return res, err
 	}
 
-	esr, err := s.searcher.Search(s.Index, query, size)
+	esr, err := s.searcher.Search(s.Index, query, source, size)
 	if err != nil {
 		return res, fmt.Errorf("failed to search: %w", err)
 	}
@@ -50,7 +50,7 @@ func emdedParams(query string, params map[string]string) (string, error) {
 }
 
 type ESSearcher interface {
-	Search(index, query string, size int) (esResult, error)
+	Search(index, query string, source []string, size int) (esResult, error)
 }
 
 type ES7Client struct {
@@ -73,11 +73,12 @@ func NewES7Client(conf ESConfig) (*ES7Client, error) {
 	return c, nil
 }
 
-func (c *ES7Client) Search(index, query string, size int) (esResult, error) {
+func (c *ES7Client) Search(index, query string, source []string, size int) (esResult, error) {
 	res, err := c.client.Search(
 		c.client.Search.WithContext(context.Background()),
 		c.client.Search.WithIndex(index),
 		c.client.Search.WithBody(strings.NewReader(query)),
+		c.client.Search.WithSource(source...),
 		c.client.Search.WithSize(size),
 		c.client.Search.WithTrackTotalHits(true),
 	)

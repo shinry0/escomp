@@ -39,7 +39,7 @@ func Run(opt Option) error {
 		if err != nil {
 			return err
 		}
-		res, err := NewSearcher(sc, cli).Search(params, opt.Size)
+		res, err := NewSearcher(sc, cli).Search(params, def.Fields, opt.Size)
 		if err != nil {
 			return err
 		}
