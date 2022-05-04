@@ -3,6 +3,8 @@ before:
     - go mod tidy
 builds:
   - main: ./cmd/escomp
+    ldflags:
+      - -s -w
     env:
       - CGO_ENABLED=0
     goos:
