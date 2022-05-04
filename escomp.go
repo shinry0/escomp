@@ -15,7 +15,7 @@ type Option struct {
 func Run(opt Option) error {
 	f, err := os.Open(opt.Filename)
 	if err != nil {
-		return fmt.Errorf("failed to open a file: %s", err)
+		return fmt.Errorf("failed to open a file: %w", err)
 	}
 	defer f.Close()
 

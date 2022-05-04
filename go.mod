@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.1.0
-	github.com/Code-Hex/dd v1.1.0
 	github.com/cbroglie/mustache v1.3.1
 	github.com/elastic/go-elasticsearch/v7 v7.17.1
 	github.com/google/go-cmp v0.5.7

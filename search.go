@@ -34,7 +34,7 @@ func (s *Searcher) Search(params map[string]string, size int) (*SearcherResult, 
 
 	esr, err := s.searcher.Search(s.Index, query, size)
 	if err != nil {
-		return res, fmt.Errorf("failed to search: %s", err)
+		return res, fmt.Errorf("failed to search: %w", err)
 	}
 	res.ESHits = esr.Hits
 
@@ -44,7 +44,7 @@ func (s *Searcher) Search(params map[string]string, size int) (*SearcherResult, 
 func emdedParams(query string, params map[string]string) (string, error) {
 	q, err := mustache.Render(query, params)
 	if err != nil {
-		return "", fmt.Errorf("failed to embed params to query template: %s", err)
+		return "", fmt.Errorf("failed to embed params to query template: %w", err)
 	}
 	return q, nil
 }
@@ -67,7 +67,7 @@ func NewES7Client(conf ESConfig) (*ES7Client, error) {
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize ES7 client: %s", err)
+		return nil, fmt.Errorf("failed to initialize ES7 client: %w", err)
 	}
 	c.client = client
 	return c, nil

@@ -31,7 +31,7 @@ func LoadDefFile(r io.Reader) (Definition, error) {
 	d := Definition{}
 	_, err := toml.NewDecoder(r).Decode(&d)
 	if err != nil {
-		return d, fmt.Errorf("fail to load the definition file: %s", err)
+		return d, fmt.Errorf("fail to load the definition file: %w", err)
 	}
 	return d, nil
 }

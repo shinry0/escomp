@@ -3,7 +3,6 @@ package escomp
 import (
 	"testing"
 
-	"github.com/Code-Hex/dd"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/olekukonko/tablewriter"
@@ -21,7 +20,7 @@ func TestConvert(t *testing.T) {
 					{
 						ID:    "0",
 						Score: 3.0,
-						Source: map[string]interface{}{
+						Source: map[string]any{
 							"title":  "title_0",
 							"number": 0,
 						},
@@ -29,7 +28,7 @@ func TestConvert(t *testing.T) {
 					{
 						ID:    "1",
 						Score: 1.0,
-						Source: map[string]interface{}{
+						Source: map[string]any{
 							"title":  "title_1",
 							"number": 1,
 						},
@@ -37,7 +36,7 @@ func TestConvert(t *testing.T) {
 					{
 						ID:    "2",
 						Score: 1.0,
-						Source: map[string]interface{}{
+						Source: map[string]any{
 							"title":  "title_2",
 							"number": 2,
 						},
@@ -56,7 +55,7 @@ func TestConvert(t *testing.T) {
 					{
 						ID:    "3",
 						Score: 3.0,
-						Source: map[string]interface{}{
+						Source: map[string]any{
 							"title":  "title_1",
 							"number": 1,
 						},
@@ -64,7 +63,7 @@ func TestConvert(t *testing.T) {
 					{
 						ID:    "4",
 						Score: 1.0,
-						Source: map[string]interface{}{
+						Source: map[string]any{
 							"title":  "title_0",
 							"number": 0,
 						},
@@ -126,7 +125,7 @@ func TestColor(t *testing.T) {
 			t.Errorf("%v of table want to be colored", wantIndices)
 		}
 		if !haveColors(got.colors, wantIndices[1:], got.colors[i][j]) {
-			t.Errorf("%v of table want to have same colors, got\n%s", wantIndices, dd.Dump(got.colors))
+			t.Errorf("%v of table want to have same colors, got %v", wantIndices, got.colors)
 		}
 	}
 
